@@ -5,40 +5,50 @@ module riscv_core_tb;
 reg clk;
 reg reset;
 
-// DUT outputs (optional if exposed)
-wire [31:0] pc;
+// Outputs from DUT
+wire [31:0] pc_out;
+wire [31:0] instr_out;
+wire [31:0] alu_result_out;
+wire [31:0] mem_data_out;
 
 // Instantiate DUT
-riscv_core_2stage uut (
+riscv_core uut (
     .clk(clk),
-    .reset(reset)
+    .reset(reset),
+    .pc_out(pc_out),
+    .instr_out(instr_out),
+    .alu_result_out(alu_result_out),
+    .mem_data_out(mem_data_out)
 );
 
-//////////////////////////////////////////////////////
+
 // Clock Generation
-//////////////////////////////////////////////////////
+
 initial begin
     clk = 0;
     forever #5 clk = ~clk;   // 10ns clock
 end
 
-//////////////////////////////////////////////////////
-// Reset
-//////////////////////////////////////////////////////
+
+// Reset Sequence
+
 initial begin
     reset = 1;
     #20;
     reset = 0;
 end
 
-//////////////////////////////////////////////////////
-// Monitor (Pipeline Observation)
-//////////////////////////////////////////////////////
+
+// Monitor (Waveform understanding)
+
 initial begin
-    $display("Time | PC | x1 x2 x3 x4 x5 x6");
-    $monitor("%0t | %h | %d %d %d %d %d %d",
+    $display("Time | PC | Instr | ALU | MEM | x1 x2 x3 x4 x5 x6");
+    $monitor("%0t | %h | %h | %d | %d | %d %d %d %d %d %d",
         $time,
-        uut.pc,
+        pc_out,
+        instr_out,
+        alu_result_out,
+        mem_data_out,
         uut.RF.regs[1],
         uut.RF.regs[2],
         uut.RF.regs[3],
@@ -48,11 +58,12 @@ initial begin
     );
 end
 
-//////////////////////////////////////////////////////
-// Self-Checking
-//////////////////////////////////////////////////////
+
+// Self-Checking Logic
+
 initial begin
-    #300;   // pipeline ke liye extra time diya
+    // Wait for program execution
+    #200;
 
     $display("\n===== RESULT CHECK =====");
 
@@ -76,7 +87,7 @@ initial begin
     else
         $display("x4 WRONG");
 
-    // branch skip check
+    // Branch skip check
     if (uut.RF.regs[5] == 0)
         $display("x5 correct (branch skipped)");
     else
@@ -87,7 +98,7 @@ initial begin
     else
         $display("x6 WRONG");
 
-    // memory check
+    // Memory check
     if (uut.DM.mem[0] == 15)
         $display("Memory correct");
     else
@@ -97,9 +108,9 @@ initial begin
     $finish;
 end
 
-//////////////////////////////////////////////////////
-// Waveform Dump
-//////////////////////////////////////////////////////
+
+// Dump Waveform
+
 initial begin
     $dumpfile("riscv.vcd");
     $dumpvars(0, riscv_core_tb);
