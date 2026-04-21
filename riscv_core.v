@@ -1,6 +1,12 @@
-module riscv_core_2stage (
+module riscv_core (
     input clk,
-    input reset
+    input reset,
+
+    // Outputs for observation
+    output [31:0] pc_out,
+    output [31:0] instr_out,
+    output [31:0] alu_result_out,
+    output [31:0] mem_data_out
 );
 
 // IF Stage
@@ -59,7 +65,13 @@ data_mem DM(clk, mem_read, mem_write,
 // Writeback
 assign write_data = (mem_read) ? mem_data : alu_result;
 
-// PC logic
+//  Correct PC logic (only one)
 pc_logic PCL(pc_ex, imm, branch, zero, jump, pc_next);
+
+//  Output connections
+assign pc_out          = pc;
+assign instr_out       = instr;
+assign alu_result_out  = alu_result;
+assign mem_data_out    = mem_data;
 
 endmodule
